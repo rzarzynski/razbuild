@@ -1,10 +1,14 @@
 # Dependency tracing module for GNU Make
 # author: Radoslaw Zarzynski
 # date: 3rd November 2013
+# license: GNU GPL v2
 
 # razbuild demo
-ROOT ?= $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
+THIS  = $(call get_pkg_name, $(lastword $(MAKEFILE_LIST)))
+
+get_pkg_name = $(subst $(ROOT)/,, $(abspath $(dir $1)))
 # define function for acquiring the list of all directories
 # which have been marked (with razbuild.index)...
 find  = $(foreach cdir, $(dir $(wildcard $1/*/razbuild.mk)),		\
@@ -17,8 +21,10 @@ DIRS := $(call find, $(ROOT))
 TGTS := $(subst $(ROOT)/,, $(DIRS))
 DEPS := $(wildcard $(addsuffix /razbuild.depends, $(DIRS)))
 
-# include all existing dependency files
-#include $(DEPS)
+# parse all existing dependency files if necessary
+ifndef BLD_OPT_NODEPS
+include $(DEPS)
+endif
 
 dbg:
 	@echo "--> root dir: $(ROOT)"
@@ -29,27 +35,13 @@ dbg:
 do:
 	$(MAKE) -C $(DIRS) dbg
 
-$(addsuffix -patch, $(TGTS)):
-	@echo "ktos zawolal $@"
+$(addsuffix -fetch, $(TGTS)) :
+	@echo sciagam $@
+	sleep 1
 
-$(addsuffix -configure, $(TGTS)): %-configure : %-patch
-	@echo "ktos zawolal $@"
+$(TGTS) : % : %-fetch
+	#$(MAKE) -C $@
 
-$(addsuffix -build, $(TGTS)): %-build : %-configure
-	@echo "ktos zawolal $@"
-
-$(addsuffix -install, $(TGTS)): %-install : %-build
-	@echo "ktos zawolal $@"
-
-$(TGTS) : % : %-build
-	@echo "ktos zawolal $@"
-
-
-test2 test3 test4 : % :
-	@echo "ktos zawolal $@"
-
-ifndef test2
-test2 :
-	@echo $(origin DIRS)
-	@echo "ktos zawolal $@"
+ifdef BLD_OPT_FORCE
+.PHONY: $(TGTS)
 endif
