@@ -19,13 +19,13 @@ pkgname2dir = $(abspath $(ROOT)/$(strip $1))
 # Define function for recursivelly acquiring the list of all directories
 # which contain file specified in the first argument $1, staring from
 # directory location provided as the second argument $2.
-find-marked = $(foreach cdir, $(dir $(wildcard $1/*/razbuild.mk)),		\
-	$(abspath $(cdir)) $(call find-marked,$(cdir)))
+find-marked = $(foreach cdir, $(dir $(wildcard $2/*/$(strip $1))),	\
+	$(abspath $(cdir)) $(call find-marked, $1, $(cdir)))
 
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 # ... and run it on the root of source tree
-DIRS := $(call find-marked, $(ROOT))
+DIRS := $(call find-marked, razbuild.mk, $(ROOT))
 
 # Obtain names of targets by stripping the root directory path.
 TGTS := $(subst $(ROOT)/,, $(DIRS))
@@ -63,12 +63,12 @@ fetch extract patch configure build: | $(RBLD_STATDIR)
 # accordingly to a given pattern and copied into final root dir
 # which location shall be provided using the FUSION_DESTDIR param.
 install:
-ifndef FUSION_DESTDIR
-	$(error "The location of final temporary root directory is unknown!")
-	$(error "Please use the FUSION_DESTDIR param.")
-else
+#ifndef FUSION_DESTDIR
+#	$(error "The location of final temporary root directory is unknown!")
+#	$(error "Please use the FUSION_DESTDIR param.")
+#else
 	$(rule-$@)
-endif
+#endif
 
 # Some jobs should be done for all packages before we go further.
 $(addsuffix -fetch, $(TGTS)) :
