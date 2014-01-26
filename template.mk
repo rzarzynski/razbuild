@@ -3,26 +3,50 @@
 # date: 25th January 2014
 # license: GNU GPL v2
 
-define rule-configure
-	@echo "Running default handler for $@"
-endef
+RBLD_WORKDIR ?= work
+RBLD_STATDIR ?= status
 
-define rule-configure
-	@echo "Running overwritten handler for $@"
-endef
+RBLD_CONFCMD ?= ./configure
+RBLD_MAKECMD ?= make
+RBLD_INSTCMD ?= make install
 
-fetch extract patch configure:
-	$(rule-$@)
+RBLD_FNALDIR ?= /tmp/test
 
-# The install target has to put all result files created during
-# package compilation in separate, per-package root directory.
-# After that, content of such directory should be filtered
-# accordingly to a given pattern and copied into final root dir
-# which location shall be provided using the FUSION_DESTDIR param.
+include ../../razbuild.mk
 
-ifndef FUSION_DESTDIR
-	$(error "The location of final temporary root directory is unknown!")
-	$(error "Please use the FUSION_DESTDIR param.")
+# The template could only be used when appropriate variables have
+# been set. Perform sanity checks.
+ifndef RBLD_WORKSRC
+    $(error RBLD_WORKSRC is not set)
 endif
-install:
-	$(rule-$@)
+
+# Supply some predefined rules for usual, regular use cases. It may
+# be overriden if package has special needs regarding, for example,
+# compilation method.
+define rule-extract
+	$(if $(RBLD_ARCHIVE),
+		$(info  Using default rule for $@),
+		$(error RBLD_ARCHIVE not set while using fallback rule))
+	tar -C $(RBLD_WORKDIR) -xf $(RBLD_ARCHIVE)
+endef
+
+define rule-configure
+	cd $(RBLD_WORKDIR)/$(RBLD_WORKSRC) && $(RBLD_CONFCMD)
+endef
+
+define rule-build
+	cd $(RBLD_WORKDIR)/$(RBLD_WORKSRC) && $(RBLD_MAKECMD)
+endef
+
+define rule-install
+	cd $(RBLD_WORKDIR)/$(RBLD_WORKSRC) && echo $(RBLD_INSTCMD)
+endef
+
+#VPATH := $(RBLD_STATDIR)
+fetch extract patch configure build: | $(RBLD_WORKDIR) $(RBLD_STATDIR)
+
+$(RBLD_WORKDIR) $(RBLD_STATDIR):
+	mkdir $@
+
+clean:
+	$(RM) -r $(RBLD_WORKDIR) $(RBLD_STATDIR)

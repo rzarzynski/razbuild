@@ -1,3 +1,1 @@
-opensource/uclibc: opensource/libgcc
-
-$(THIS) : zupa
+$(THIS) : opensource/libgcc
