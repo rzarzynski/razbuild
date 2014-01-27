@@ -30,13 +30,15 @@ DIRS := $(call find-marked, razbuild.mk, $(ROOT))
 # Obtain names of targets by stripping the root directory path.
 TGTS := $(subst $(ROOT)/,, $(DIRS))
 
+RBLD_STATDIR := status
+
 # Parse all existing dependency files if necessary. Please be aware
 # that dependencies are resolved only once: for the package that
 # is the root of dependency graph. There is no need to perform
 # such action for deps, deps of deps and so on. To speed up the build
-# all invocation of make in these situation will be with BLD_OPT_NODEPS
+# all invocation of make in these situation will be with RBLD_OPT_NODEPS
 # param supplied (see $(filter-out $(THIS), $(TGTS)) : % : %-fetch).
-ifndef BLD_OPT_NODEPS
+ifndef RBLD_OPT_NODEPS
     THIS  = $(call dir2pkgname, $(lastword $(MAKEFILE_LIST)))
     DEPS := $(wildcard $(addsuffix /razbuild.depends, $(DIRS)))
 
@@ -44,6 +46,19 @@ ifndef BLD_OPT_NODEPS
 endif
 
 THIS := $(call dir2pkgname, $(firstword $(MAKEFILE_LIST)))
+
+ifdef RBLD_OPT_FORCE
+.PHONY: $(TGTS)
+else
+.INTERMEDIATE : $(TGTS)
+
+vpath fetch		$(RBLD_STATDIR)
+vpath extract	$(RBLD_STATDIR)
+vpath patch		$(RBLD_STATDIR)
+vpath configure	$(RBLD_STATDIR)
+vpath build		$(RBLD_STATDIR)
+vpath install	$(RBLD_STATDIR)
+endif
 
 # Define the proper dependencies between jobs and its order.
 patch     :         extract
@@ -55,6 +70,11 @@ install   : $(THIS) build
 # a given target) should be provided by makefile that is including
 # this file.
 fetch extract patch configure build: | $(RBLD_STATDIR)
+	$(rule-$@)
+	touch $(abspath $(RBLD_STATDIR)/$@)
+
+clean: $(THIS)
+	$(RM) -r $(RBLD_STATDIR)
 	$(rule-$@)
 
 # The install target has to put all result files created during
@@ -73,18 +93,15 @@ install:
 # Some jobs should be done for all packages before we go further.
 $(addsuffix -fetch, $(TGTS)) :
 	@echo sciagam $(subst -fetch, ,$@)
-	sleep 1
-	#$(MAKE) -C $(ROOT)/$(subst -fetch,,$@) fetch BLD_OPT_NODEPS=true
+	#$(MAKE) -C $(ROOT)/$(subst -fetch,,$@) fetch RBLD_OPT_NODEPS=true
 
 # Rule for handling depedencies of root of current depedency graph.
-$(filter-out $(THIS), $(TGTS)) : % : %-fetch
-	$(MAKE) -C $(ROOT)/$@ BLD_OPT_NODEPS=true
+$(filter-out $(THIS), $(TGTS)) :
+	$(MAKE) -C $(ROOT)/$@ RBLD_OPT_NODEPS=true $(MAKECMDGOALS)
 
 # ... and the root themself.
 $(THIS):
-	$(info --> Starting build of the root of dep graph: $@)
 
+$(RBLD_STATDIR) :
+	mkdir -p $@
 
-ifdef BLD_OPT_FORCE
-.PHONY: $(TGTS)
-endif

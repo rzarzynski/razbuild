@@ -8,8 +8,9 @@ RBLD_STATDIR ?= status
 
 RBLD_CONFCMD ?= ./configure
 RBLD_MAKECMD ?= make
-RBLD_INSTCMD ?= make install
+RBLD_INSTCMD ?= make DESTDIR=$(RBLD_TEMPDIR) install
 
+RBLD_TEMPDIR ?= $(abspath $(RBLD_WORKDIR)/tmp_destdir)
 RBLD_FNALDIR ?= /tmp/test
 
 include ../../razbuild.mk
@@ -23,11 +24,17 @@ endif
 # Supply some predefined rules for usual, regular use cases. It may
 # be overriden if package has special needs regarding, for example,
 # compilation method.
+define rule-fetch
+endef
+
 define rule-extract
 	$(if $(RBLD_ARCHIVE),
 		$(info  Using default rule for $@),
 		$(error RBLD_ARCHIVE not set while using fallback rule))
 	tar -C $(RBLD_WORKDIR) -xf $(RBLD_ARCHIVE)
+endef
+
+define rule-patch
 endef
 
 define rule-configure
@@ -39,14 +46,22 @@ define rule-build
 endef
 
 define rule-install
-	cd $(RBLD_WORKDIR)/$(RBLD_WORKSRC) && echo $(RBLD_INSTCMD)
+	cd $(RBLD_WORKDIR)/$(RBLD_WORKSRC) && $(RBLD_INSTCMD)
+endef
+
+define rule-filter
+endef
+
+define rule-fusion
+endef
+
+define rule-clean
+	$(RM) -r $(RBLD_WORKDIR) $(RBLD_STATDIR)
 endef
 
 #VPATH := $(RBLD_STATDIR)
-fetch extract patch configure build: | $(RBLD_WORKDIR) $(RBLD_STATDIR)
+fetch extract patch configure build: | $(RBLD_WORKDIR) $(RBLD_STATDIR) \
+	$(RBLD_TEMPDIR)
 
-$(RBLD_WORKDIR) $(RBLD_STATDIR):
-	mkdir $@
-
-clean:
-	$(RM) -r $(RBLD_WORKDIR) $(RBLD_STATDIR)
+$(RBLD_WORKDIR) $(RBLD_TEMPDIR):
+	mkdir -p $@
