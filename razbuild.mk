@@ -32,6 +32,10 @@ TGTS := $(subst $(ROOT)/,, $(DIRS))
 
 RBLD_STATDIR := status
 
+# All jobs (aka targets) should be stored on list. The core advantage
+# of such idea is extendability.
+JOBS := fetch extract patch configure build install
+
 # Parse all existing dependency files if necessary. Please be aware
 # that dependencies are resolved only once: for the package that
 # is the root of dependency graph. There is no need to perform
@@ -52,16 +56,17 @@ ifdef RBLD_OPT_FORCE
 else
 .INTERMEDIATE : $(TGTS)
 
-vpath fetch		$(RBLD_STATDIR)
-vpath extract	$(RBLD_STATDIR)
-vpath patch		$(RBLD_STATDIR)
-vpath configure	$(RBLD_STATDIR)
-vpath build		$(RBLD_STATDIR)
-vpath install	$(RBLD_STATDIR)
+# Set directory where job early-exit files will be stored. Existence
+# of such file in package's status directory will suppress execution
+# all commands of the job. Concept behind this behaviour is to avoid
+# performing already done actions.
+$(foreach job, $(JOBS), $(eval vpath $(job) $(RBLD_STATDIR)))
 endif
 
 # Define the proper dependencies between jobs and its order.
-patch     :         extract
+clean     : $(THIS)
+extract   : $(THIS)
+patch     :         extract-deps
 configure : $(THIS) patch
 build     : $(THIS) configure
 install   : $(THIS) build
@@ -69,11 +74,11 @@ install   : $(THIS) build
 # The body of a job (read: commands which will be runned to perform
 # a given target) should be provided by makefile that is including
 # this file.
-fetch extract patch configure build: | $(RBLD_STATDIR)
+$(JOBS): | $(RBLD_STATDIR)
 	$(rule-$@)
 	touch $(RBLD_STATDIR)/$@
 
-clean: $(THIS)
+clean:
 	$(RM) -r $(RBLD_STATDIR)
 	$(rule-$@)
 
@@ -82,26 +87,20 @@ clean: $(THIS)
 # After that, content of such directory should be filtered
 # accordingly to a given pattern and copied into final root dir
 # which location shall be provided using the FUSION_DESTDIR param.
-install:
 #ifndef FUSION_DESTDIR
 #	$(error "The location of final temporary root directory is unknown!")
 #	$(error "Please use the FUSION_DESTDIR param.")
-#else
-	$(rule-$@)
 #endif
 
+# Handle cases when user wants to run the given job on whole dependency
+# graph.
 # Some jobs should be done for all packages before we go further.
-$(addsuffix -fetch, $(TGTS)) :
-	@echo sciagam $(subst -fetch, ,$@)
-	#$(MAKE) -C $(ROOT)/$(subst -fetch,,$@) fetch RBLD_OPT_NODEPS=true
+$(addsuffix -deps, extract) : %-deps :
+	$(MAKE) $*
 
 # Rule for handling depedencies of root of current depedency graph.
 $(filter-out $(THIS), $(TGTS)) :
 	$(MAKE) -C $(ROOT)/$@ RBLD_OPT_NODEPS=true $(MAKECMDGOALS)
 
-# ... and the root themself.
-$(THIS):
-
 $(RBLD_STATDIR) :
 	mkdir -p $@
-
