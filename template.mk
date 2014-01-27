@@ -10,7 +10,7 @@ RBLD_CONFCMD ?= ./configure
 RBLD_MAKECMD ?= make
 RBLD_INSTCMD ?= make DESTDIR=$(RBLD_TEMPDIR) install
 
-RBLD_TEMPDIR ?= $(abspath $(RBLD_WORKDIR)/tmp_destdir)
+RBLD_TEMPDIR ?= $(RBLD_WORKDIR)/tmp_destdir
 RBLD_FNALDIR ?= /tmp/test
 
 include ../../razbuild.mk

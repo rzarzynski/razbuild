@@ -71,7 +71,7 @@ install   : $(THIS) build
 # this file.
 fetch extract patch configure build: | $(RBLD_STATDIR)
 	$(rule-$@)
-	touch $(abspath $(RBLD_STATDIR)/$@)
+	touch $(RBLD_STATDIR)/$@
 
 clean: $(THIS)
 	$(RM) -r $(RBLD_STATDIR)
