@@ -4,7 +4,7 @@
 # license: GNU GPL v2
 
 RBLD_WORKDIR ?= work
-RBLD_STATDIR ?= status
+STATDIR ?= status
 
 RBLD_CONFCMD ?= ./configure
 RBLD_MAKECMD ?= make
@@ -56,11 +56,11 @@ define rule-fusion
 endef
 
 define rule-clean
-	$(RM) -r $(RBLD_WORKDIR) $(RBLD_STATDIR)
+	$(RM) -r $(RBLD_WORKDIR) $(STATDIR)
 endef
 
 #VPATH := $(RBLD_STATDIR)
-fetch extract patch configure build: | $(RBLD_WORKDIR) $(RBLD_STATDIR) \
+fetch extract patch configure build: | $(RBLD_WORKDIR) $(STATDIR) \
 	$(RBLD_TEMPDIR)
 
 $(RBLD_WORKDIR) $(RBLD_TEMPDIR):

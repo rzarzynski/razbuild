@@ -55,10 +55,11 @@ endif
 THIS       := $(call dir2pkgname, $(firstword $(MAKEFILE_LIST)))
 
 ifdef RBLD_OPT_FORCE
-.PHONY        : $(ALLPKGS)
+.PHONY        : $(ALLPKGS) $(JOBS)
 else
 # Below pseudorule 
 .INTERMEDIATE : $(ALLPKGS)
+.INTERMEDIATE : extract-deps
 
 # Set directory where job early-exit files will be stored. Existence
 # of such file in package's status directory will suppress execution
@@ -105,6 +106,9 @@ $(addsuffix -deps, extract) : %-deps :
 # Rule for handling depedencies of root of current depedency graph.
 $(filter-out $(THIS), $(ALLPKGS)) :
 	$(MAKE) -C $(ROOTDIR)/$@ RBLD_OPT_NODEPS=true $(MAKECMDGOALS)
+
+# ... and the root themself.
+$(THIS):
 
 $(STATDIR) :
 	mkdir -p $@
