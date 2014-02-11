@@ -26,10 +26,10 @@ define rule-fetch
 endef
 
 define rule-extract
-	$(if $(RBLD_ARCHIVE),
+	$(if $(RBLD_ARCHIVES),
 		$(info  Using default rule for $@),
-		$(error RBLD_ARCHIVE not set while using fallback rule))
-	tar -C $(RBLD_WORKDIR) -xf $(RBLD_ARCHIVE)
+		$(error RBLD_ARCHIVES not set while using fallback rule))
+	tar -C $(RBLD_WORKDIR) -xf $(RBLD_ARCHIVES)
 endef
 
 define rule-patch
