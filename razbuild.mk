@@ -124,7 +124,7 @@ clean:
 
 # Rule for handling depedencies of root of current depedency graph.
 $(filter-out $(THIS), $(ALLPKGS)) :
-	$(MAKE) -C $(ROOTDIR)/$@ RBLD_OPT_NODEPS=true $(MAKECMDGOALS)
+	$(MAKE) -C $(ROOTDIR)/$@ RBLD_OPT_NODEPS=1 $(MAKECMDGOALS)
 
 # ... and the root themself.
 $(THIS):
