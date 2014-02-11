@@ -3,7 +3,7 @@
 # date: 25th January 2014
 # license: GNU GPL v2
 
-RBLD_WORKDIR ?= work
+RBLD_WORKDIR ?= $(abspath work)
 STATDIR ?= status
 
 RBLD_CONFCMD ?= ./configure
@@ -12,8 +12,6 @@ RBLD_INSTCMD ?= make DESTDIR=$(RBLD_TEMPDIR) install
 
 RBLD_TEMPDIR ?= $(RBLD_WORKDIR)/tmp_destdir
 RBLD_FNALDIR ?= /tmp/test
-
-include ../../razbuild.mk
 
 # The template could only be used when appropriate variables have
 # been set. Perform sanity checks.
@@ -59,8 +57,9 @@ define rule-clean
 	$(RM) -r $(RBLD_WORKDIR) $(STATDIR)
 endef
 
-#VPATH := $(RBLD_STATDIR)
-fetch extract patch configure build: | $(RBLD_WORKDIR) $(STATDIR) \
+include ../../razbuild.mk
+
+$(JOBS): | $(RBLD_WORKDIR) $(STATDIR) \
 	$(RBLD_TEMPDIR)
 
 $(RBLD_WORKDIR) $(RBLD_TEMPDIR):
